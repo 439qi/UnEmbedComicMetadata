@@ -110,24 +110,43 @@ class ComicMetadata:
 
         # ensure we have a temp file
         self.make_temp_cbz_file()
-
-        if not python3:
-            cix_string = cix_string.decode('utf-8', 'ignore')
-        # use the safe_replace function from calibre to prevent coruption
         if self.zipinfo is not None:
-            with open(self.file, 'r+b') as zf:
-                safe_replace(zf, self.zipinfo, StringIO(cix_string))
-        # save the metadata in the file
-        else:
-            zf = ZipFile(self.file, "a")
-            zf.writestr("ComicInfo.xml", cix_string)
-            zf.close()
+            # new file without ComicInfo.xml
+            with TemporaryFile("new_file.cbz") as new_file_name:
+                new_file = ZipFile(new_file_name, 'w')
+                # old temp file
+                old_file = ZipFile(self.file, 'r')
+                old_file_list = old_file.namelist()
+                # read and copy files except ComicInfo.xml
+                for file_name in old_file_list:
+                    if file_name != "ComicInfo.xml":
+                        file_to_copy = old_file.read(file_name)
+                        new_file.writestr(file_name, file_to_copy)
+
+                new_file.close()
+                old_file.close()
+                os.remove(self.file)
+
+                self.file=new_file_name
+                self.db.add_format(self.book_id, "cbz", new_file_name)
+
+        # if not python3:
+        #     cix_string = cix_string.decode('utf-8', 'ignore')
+        # # use the safe_replace function from calibre to prevent coruption
+        # if self.zipinfo is not None:
+        #     with open(self.file, 'r+b') as zf:
+        #         safe_replace(zf, self.zipinfo, StringIO(cix_string))
+        # # save the metadata in the file
+        # else:
+        #     zf = ZipFile(self.file, "a")
+        #     zf.writestr("ComicInfo.xml", cix_string)
+        #     zf.close()
 
     def embed_cbi_metadata(self):
         '''
         Embeds the cbi_metadata
         '''
-        cbi_string = ComicBookInfo().stringFromMetadata(self.comic_metadata)
+        cbi_string = ""
 
         # ensure we have a temp file
         self.make_temp_cbz_file()

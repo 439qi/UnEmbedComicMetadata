@@ -45,7 +45,7 @@ def embed_into_comic(ia, action):
             metadata.embed_cix_metadata()
         if action == "both" or action == "cbi":
             metadata.embed_cbi_metadata()
-        metadata.add_updated_comic_to_calibre()
+        # metadata.add_updated_comic_to_calibre()
         return True
 
     iterate_over_books(ia, _embed_into_comic,
